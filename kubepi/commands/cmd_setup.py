@@ -48,9 +48,8 @@ def init(ctx, kube_context):
         ostype)
 
     # Skaffold parameters
-    go_arch = 'GOARCH=arm'
-    skaffold_path = 'skaffold'
-    skaffold_url = 'https://github.com/GoogleContainerTools/skaffold.git'
+    skaffold_url = 'https://github.com/nushkovg/skaffold/releases/download/v1.14.0-arm/skaffold-{}-arm'.format(
+        ostype)
 
     with click_spinner.spinner():
         # Download kubectl
@@ -80,13 +79,10 @@ def init(ctx, kube_context):
 
         # Download skaffold
         logger.info('Downloading skaffold...')
-        Repo.clone_from(skaffold_url, skaffold_path)
-        os.system('(cd {} && {} make)'.format(skaffold_path, go_arch))
-        os.system('mv {}/out/skaffold bin/skaffold'.format(skaffold_path))
-        os.system('rm -rf {}'.format(skaffold_path))
+        urllib.request.urlretrieve(skaffold_url, 'bin/skaffold')
         st = os.stat('bin/skaffold')
         os.chmod('bin/skaffold', st.st_mode | stat.S_IEXEC)
-        logger.info('skaffold downloaded!\n')
+        logger.info('skaffold downloaded')
 
     logger.info('All dependencies downloaded to bin/')
     logger.info('IMPORTANT: Please add the path to your user profile to ' +
