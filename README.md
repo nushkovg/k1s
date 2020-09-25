@@ -211,8 +211,6 @@ Use `kubepi` to initialize the toolchain. The command below will download all ne
 kubepi setup init
 ```
 
-> **_WARNING:_** Since Skaffold does not officially support ARM architectures like the RaspberryPI, the installation might take 5 minutes or longer because it will build an ARM binary on runtime. This will be fixed in following releases by either the Skaffold team or by hosting a prebuilt binary.
-
 Follow the instructions prompted to add the bin/ directory to your PATH. Make sure to log-off/log-on once you have done so. If you don't want to do that, simply run `source ~/.profile`, `source ~/.bashrc` or `source ~/.zshrc`.
 
 > **_NOTE:_** The command will tell you to place the directory in your PATH by placing it in the `~/.profile` file. If for some reason this does not work, replace `~/.profile` with `~/.bashrc` or `~/.zshrc` in the `echo export PATH=<K1S_DIRECTORY>/bin:$PATH >> ~/.profile` command and run `source ~/.bashrc` or `source ~/.zshrc` again.
