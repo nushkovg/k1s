@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Values.prometheus.name }}"
+  namespace: "{{ .Values.prometheus.namespace }}"
+  labels:
+    app: "{{ .Values.prometheus.name }}"
+spec:
+  type: "{{ .Values.prometheus.service.type }}"
+  selector:
+    app: "{{ .Values.prometheus.name }}"
+  ports:
+  - name: "{{ .Values.prometheus.service.ports.name }}"
+    port: {{ .Values.prometheus.service.ports.port }}
+    targetPort: {{ .Values.prometheus.service.ports.port }}

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Values.ui.name }}"
+  namespace: "{{ .Values.ui.namespace }}"
+  
+spec:
+  type: "{{ .Values.ui.service.type }}"
+  ports:
+  - name: "{{ .Values.ui.service.ports.name }}"
+    targetPort: {{ .Values.ui.service.ports.port }}
+    port: {{ .Values.ui.service.ports.port }}
+  selector:
+    app: "{{ .Values.ui.name }}"

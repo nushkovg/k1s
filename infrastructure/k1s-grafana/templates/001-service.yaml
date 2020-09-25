@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Values.grafana.name }}"
+  namespace: "{{ .Values.grafana.namespace }}"
+  labels:
+    app: "{{ .Values.grafana.name }}"
+spec:
+  type: "{{ .Values.grafana.service.type }}"
+  selector:
+    app: "{{ .Values.grafana.name }}"
+  ports:
+  - name: "{{ .Values.grafana.service.ports.name }}"
+    port: {{ .Values.grafana.service.ports.port }}
+    targetPort: {{ .Values.grafana.service.ports.port }}

@@ -1,0 +1,17 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: "{{ .Values.oauth.name }}"
+  namespace: "{{ .Values.oauth.namespace }}"
+  labels:
+    app: "{{ .Values.oauth.name }}"
+spec:
+  entryPoints:
+    - "{{ .Values.oauth.ingress.entrypoint }}"
+  routes:
+  - match: "{{ .Values.oauth.ingress.rule }}"
+    kind: Rule
+    services:
+    - name: "{{ .Values.oauth.name }}"
+      port: {{ .Values.oauth.service.ports.port }}
+ 

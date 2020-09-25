@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Values.traefik.cron.name }}"
+  namespace: "{{ .Values.traefik.namespace }}"
+data:
+  namesilo-ddns.sh: "#!/bin/bash\n\n##List of domain names (separated with spaces).\n##Subdomains
+    are also supported, e.g., host.example.com, sub.host.example.com\nDOMAINS=(\"{{ .Values.traefik.args.le.sanDomain }}\")\n\n##APIKEY
+    obtained from Namesilo:\nAPIKEY=$(echo $NAMESILO_API_KEY)\n\n##
+    Do not edit lines below ##\n\n##Saved history pubic IP from last check\nIP_FILE=\"/var/tmp/MyPubIP\"\n\n##Time
+    IP last updated or 'No IP change' log message output\nIP_TIME=\"/var/tmp/MyIPTime\"\n\n##Temporary
+    path for parsing DNS records from Namesilo\nDOMAIN_XML_PATH=\"/var/tmp/\"\n\n##How
+    often to output 'No IP change' log messages\nNO_IP_CHANGE_TIME=86400\n\n##Response
+    from Namesilo\nRESPONSE=\"/tmp/namesilo_response.xml\"\n\n##Choose randomly which
+    OpenDNS resolver to use\nRESOLVER=resolver$(echo $((($RANDOM%4)+1))).opendns.com\n##Get
+    the current public IP using DNS\nCUR_IP=\"$(dig +short myip.opendns.com @$RESOLVER)\"\nODRC=$?\n\n##
+    Try Google DNS if OpenDNS failed\nif [ $ODRC -ne 0 ]; then\n    echo \"IP Lookup
+    at ${RESOLVER} failed!\"\n    sleep 5\n##Choose randomly which Google resolver
+    to use\n    RESOLVER=ns$(echo $((($RANDOM%4)+1))).google.com\n##Get the current
+    public IP \n    IPQUOTED=$(dig TXT +short o-o.myaddr.l.google.com @$RESOLVER)\n
+    \   GORC=$?\n## Exit if google failed\n    if [ $GORC -ne 0 ]; then\n      echo
+    \"IP Lookup at ${RESOLVER} failed!\"\n      exit 1\n    fi\n    CUR_IP=$(echo
+    $IPQUOTED | awk -F'\"' '{ print $2}')\nfi\n\n##Check file for previous IP address\nif
+    [ -f $IP_FILE ]; then\n  KNOWN_IP=$(cat $IP_FILE)\nelse\n  KNOWN_IP=\nfi\n\n\n##See
+    if the IP has changed\nif [ \"$CUR_IP\" != \"$KNOWN_IP\" ]; then\n  echo $CUR_IP
+    > $IP_FILE\n  echo \"Public IP changed to ${CUR_IP} from ${RESOLVER}\"\n\n  ##Update
+    DNS record in Namesilo:\n  for FQDN in \"${DOMAINS[@]}\"\n  do\n    DOMAIN=$(echo
+    $FQDN | grep -oP '[^.]+\\.[^.]+$')\n    HOST=$(echo $FQDN | sed 's/\\.\\?[^.]\\+\\.[^.]\\+$//')\n
+    \   HOST_WITH_DOT=$(echo $HOST | awk '{if($0!=\"\") print $HOST\".\"; else print
+    \"\"}')\n    curl -s \"https://www.namesilo.com/api/dnsListRecords?version=1&type=xml&key=$APIKEY&domain=$DOMAIN\"
+    > $DOMAIN_XML_PATH$DOMAIN.xml\n    RECORD_ID=`xmllint --xpath \"//namesilo/reply/resource_record/record_id[../host/text()
+    = '$HOST_WITH_DOT$DOMAIN' ]\" $DOMAIN_XML_PATH$DOMAIN.xml | grep -oP '(?<=<record_id>).*?(?=</record_id>)'`\n
+    \   curl -s \"https://www.namesilo.com/api/dnsUpdateRecord?version=1&type=xml&key=$APIKEY&domain=$DOMAIN&rrid=$RECORD_ID&rrhost=$HOST&rrvalue=$CUR_IP&rrttl=3603\"
+    > $RESPONSE\n    RESPONSE_CODE=`xmllint --xpath \"//namesilo/reply/code/text()\"
+    \ $RESPONSE`\n        case $RESPONSE_CODE in\n        300)\n          date \"+%s\"
+    > $IP_TIME\n          echo \"Update success. ${FQDN} IP address is now ${CUR_IP}\";;\n
+    \       280)\n          echo \"Update aborted. ${FQDN} duplicate record found.\";;\n
+    \       *)\n          ## put the old IP back, so that the update will be tried
+    next time\n          echo $KNOWN_IP > $IP_FILE\n          echo \"Update failure.
+    DDNS response code was ${RESPONSE_CODE}!\";;\n    esac\n  done\n\nelse\n  ## Only
+    log all these events NO_IP_CHANGE_TIME after last update\n  [ $(date \"+%s\")
+    -gt $((($(cat $IP_TIME)+$NO_IP_CHANGE_TIME))) ] &&\n    echo \"Update unneded.
+    ${FQDN} IP address unchanged from ${RESOLVER}\" &&\n    date \"+%s\" > $IP_TIME\nfi\n\nexit
+    0"

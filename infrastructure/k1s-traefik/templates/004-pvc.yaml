@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: "{{ .Values.traefik.certs.claimName }}"
+  namespace: "{{ .Values.traefik.namespace }}"
+spec:
+  accessModes:
+    - "{{ .Values.traefik.pvc.certs.mode }}"
+  storageClassName: "{{ .Values.traefik.pvc.certs.storageClassName }}"
+  resources:
+    requests:
+      storage: "{{ .Values.traefik.pvc.certs.storage }}"

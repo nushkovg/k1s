@@ -1,0 +1,424 @@
+namespace: k1s
+
+######################
+## UI Configuration ##
+######################
+
+ui:
+  name: ui
+  namespace: k1s
+  replicas: 1
+
+  service:
+    type: ClusterIP
+
+    ports:
+      name: http
+      port: 1313
+  
+  image: # set automatically in skaffold
+  pullPolicy: IfNotPresent
+
+  ingress:
+    entrypoint: websecure
+    rule: # CONFIGURE ME
+
+###########################
+## Traefik Configuration ##
+###########################
+
+traefik:
+  name: traefik
+  namespace: traefik
+
+  service:
+    externalTrafficPolicy: Cluster
+    type: LoadBalancer
+    sessionAffinity: None
+    
+    ports:
+      protocol: TCP
+      web:
+        name: web
+        port: 80
+      websecure:
+        name: websecure
+        port: 443
+      admin:
+        name: admin
+        port: 8080
+  
+  image:
+    repository: traefik
+    tag: v2.2
+    pullPolicy: IfNotPresent
+  
+  args:
+    log: INFO
+    dashboard: true
+    newVersion: true
+    kubeCrd: true
+    ping: true
+    insecureSkipVerify: true
+    
+    entrypoints:
+      webPort: :80
+      websecurePort: :443
+      adminPort: :8080
+      redirectTo: websecure
+    
+    le:
+      email: # CONFIGURE ME
+      certFile: acme.json
+      dnsChallengeProvider: namesilo
+      caServer: # CONFIGURE ME
+      certResolver: le
+      mainDomain: # CONFIGURE ME
+      sanDomain: # CONFIGURE ME
+    
+    metrics:
+      enabled: true
+      buckets: "0.100000,0.300000,1.200000,5.000000"
+      entrypointLabels: true
+      servicesLabels: true
+    
+  env:
+    api:
+      name: NAMESILO_API_KEY
+      secretName: namesilo
+    propagation:
+      name: NAMESILO_PROPAGATION_TIMEOUT
+      value: 7200
+    polling:
+      name: NAMESILO_POLLING_INTERVAL
+      value: 60
+    ttl:
+      name: NAMESILO_TTL
+      value: 7200
+  
+  probe:
+    path: /ping
+    scheme: HTTP
+    failure: 3
+    initialDelay: 10
+    period: 10
+    success: 1
+    timeout: 2
+
+  certs:
+    name: certificates
+    claimName: traefik-certs-pvc
+    mountPath: /etc/traefik/certs
+  
+  pvc:
+    certs:
+      mode: ReadWriteOnce
+      storageClassName: local-path
+      storage: 5Mi
+  
+  ingress:
+    name: traefik-dashboard
+    entryPoint: websecure
+    rule: # CONFIGURE ME
+    service: api@internal
+
+  cron:
+    name: dns-update
+    schedule: "*/15 * * * *"
+    concurrency: Forbid
+    successHistory: 1
+    faildHistory: 1
+    restart: OnFailure
+    command: 
+      - '"/bin/bash"'
+      - '"-c"'
+      - '"/scripts/namesilo-ddns.sh"'
+
+    image: # set automatically in skaffold
+    pullPolicy: IfNotPresent
+
+    volume:
+      name: dns-volume
+      mountPath: /scripts
+      mode: 0744
+      
+######################################
+## Custom Error Pages Configuration ##
+######################################
+
+pages:
+
+  name: custom-errors
+  namespace: traefik
+  replicas: 1
+
+  service:
+    type: ClusterIP
+
+    ports:
+      name: http
+      port: 9000
+  
+  image: # set automatically in skaffold
+  pullPolicy: IfNotPresent
+  
+  middleware:
+    status: 400-599
+    query: /{status}.html
+
+#################################
+## GitHub Oauth2 Configuration ##
+#################################
+
+oauth:
+
+  name: traefik-forward-auth
+  namespace: traefik
+  replicas: 1
+  strategy: Recreate
+
+  service:
+    type: ClusterIP
+
+    ports:
+      name: auth-web
+      port: 4181
+  
+  middleware:
+    protocol: http
+    responseHeader: X-Forwarded-User
+  
+  image:
+    repository: thomseddon/traefik-forward-auth
+    tag: 2.2.0-arm
+    pullPolicy: IfNotPresent
+  
+  env:
+    insecureCookie:
+      name: INSECURE_COOKIE
+      value: false
+    log:
+      name: LOG_LEVEL
+      value: info
+    provider:
+      name: DEFAULT_PROVIDER
+      value: generic-oauth
+    whitelist:
+      name: WHITELIST
+      value: # CONFIGURE ME
+    logoutRedirect:
+      name: LOGOUT_REDIRECT
+      value: # CONFIGURE ME
+    cookieDomain:
+      name: COOKIE_DOMAIN
+      value: # CONFIGURE ME
+    authHost:
+      name: AUTH_HOST
+      value: # CONFIGURE ME
+    authURL:
+      name: PROVIDERS_GENERIC_OAUTH_AUTH_URL
+      value: https://github.com/login/oauth/authorize
+    tokenURL:
+      name: PROVIDERS_GENERIC_OAUTH_TOKEN_URL
+      value: https://github.com/login/oauth/access_token
+    userURL:
+      name: PROVIDERS_GENERIC_OAUTH_USER_URL
+      value: https://api.github.com/user
+    clientID:
+      name: PROVIDERS_GENERIC_OAUTH_CLIENT_ID
+    clientSecret:
+      name: PROVIDERS_GENERIC_OAUTH_CLIENT_SECRET
+    secret:
+      name: SECRET
+
+  ingress:
+    entrypoint: websecure
+    rule: # CONFIGURE ME
+
+##############################
+## Prometheus Configuration ##
+##############################
+
+prometheus:
+  name: prometheus
+  namespace: monitoring
+  replicas: 1
+
+  service:
+    type: ClusterIP
+
+    ports:
+      name: prometheus
+      port: 9090
+  
+  image:
+    repository: prom/prometheus
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  args:
+    config: /etc/prometheus/prometheus.yml
+    storagePath: /prometheus
+    retentionTime: 10d
+
+    externalURL:
+      protocol: https
+
+  volume:
+    config:
+      name: prometheus-config
+      mountPath: /etc/prometheus/
+      mode: 420
+    
+    storage:
+      name: prometheus-storage
+      mountPath: /prometheus
+      accessMode: ReadWriteOnce
+      size: 64Mi
+  
+  ingress:
+    entrypoint: websecure
+    rule: # CONFIGURE ME
+  
+###########################
+## Grafana Configuration ##
+###########################
+
+grafana:
+  name: grafana
+  namespace: monitoring
+  replicas: 1
+  promProtocol: http
+
+  service:
+    type: ClusterIP
+
+    ports:
+      name: grafana
+      port: 3000
+  
+  image:
+    repository: grafana/grafana
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  env:
+    signUp:
+      name: GF_USERS_ALLOW_SIGN_UP
+      value: false
+    plugins:
+      name: GF_INSTALL_PLUGINS
+      value: grafana-piechart-panel
+    user:
+      name: GF_SECURITY_ADMIN_USER
+      value: # CONFIGURE ME
+    home:
+      name: GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH
+      value: /etc/grafana/provisioning/dashboards/home.json
+    admin:
+      name: GF_SECURITY_ADMIN_PASSWORD
+    
+  volume:
+    dashboards:
+      name: grafana-config-dashboards
+      mountPath: /etc/grafana/provisioning/dashboards
+
+    datasources:
+      name: grafana-config-datasources
+      mountPath: /etc/grafana/provisioning/datasources
+    
+    storage:
+      name: grafana-storage
+      mountPath: /var/lib/grafana
+      accessMode: ReadWriteOnce
+      size: 1Gi
+
+  ingress:
+    entrypoint: websecure
+    rule: # CONFIGURE ME
+
+########################################
+## Kubernetes Dashboard Configuration ##
+########################################
+
+dashboard:
+  name: kubernetes-dashboard
+  namespace: monitoring
+  replicas: 1
+  historyLimit: 10
+  adminName: k1s-admin
+  clusterAdminName: cluster-admin
+
+  ports:
+    port: 443
+    targetPort: 8443
+    protocol: TCP
+  
+  image:
+    repository: kubernetesui/dashboard
+    tag: v2.0.4
+    pullPolicy: IfNotPresent
+  
+  volume:
+    certs:
+      name: kubernetes-dashboard-certs
+      mountPath: /certs
+    
+    tmp:
+      name: tmp-volume
+      mountPath: /tmp
+  
+  probe:
+    path: /
+    scheme: HTTPS
+    initialDelay: 10
+    timeout: 2
+  
+  securityContext:
+    escalation: false
+    rootReadOnly: true
+    user: 1001
+    group: 2001
+  
+  secrets:
+    type: Opaque
+
+    csrf:
+      name: kubernetes-dashboard-csrf
+      data: ""
+    
+    key:
+      name: kubernetes-dashboard-key-holder
+  
+  configmap:
+    name: kubernetes-dashboard-settings
+  
+  ingress:
+    entrypoint: websecure
+    rule: # CONFIGURE ME
+
+dashboardMetrics:
+  name: dashboard-metrics-scraper
+  replicas: 1
+  historyLimit: 10
+
+  ports:
+    port: 8000
+    protocol: TCP
+  
+  image:
+    repository: kubernetesui/metrics-scraper
+    tag: v1.0.4
+    pullPolicy: IfNotPresent
+  
+  probe:
+    path: /
+    scheme: HTTP
+    initialDelay: 30
+    timeout: 30
+  
+  securityContext:
+    escalation: false
+    rootReadOnly: true
+    user: 1001
+    group: 2001

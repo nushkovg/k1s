@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Values.oauth.name }}"
+  namespace: "{{ .Values.oauth.namespace }}"
+  labels:
+    app: "{{ .Values.oauth.name }}"
+spec:
+  type: "{{ .Values.oauth.service.type }}"
+  selector:
+    app: "{{ .Values.oauth.name }}"
+  ports:
+  - name: "{{ .Values.oauth.service.ports.name }}"
+    port: {{ .Values.oauth.service.ports.port }}
+    targetPort: {{ .Values.oauth.service.ports.port }}

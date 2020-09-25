@@ -1,0 +1,101 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: "{{ .Values.traefik.name }}"
+  namespace: "{{ .Values.traefik.namespace }}"
+  labels:
+    app: "{{ .Values.traefik.name }}"
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "{{ .Values.traefik.name }}"
+  template:
+    metadata:
+      labels:
+        app: "{{ .Values.traefik.name }}"
+    spec:
+      serviceAccountName: "{{ .Values.traefik.name }}"
+      containers:
+        - name: "{{ .Values.traefik.name }}"
+          image: "{{ .Values.traefik.image.repository }}:{{ .Values.traefik.image.tag }}"
+          imagePullPolicy: "{{ .Values.traefik.image.pullPolicy }}"
+          args:
+            # General settings
+            - --api
+            - --accesslog
+            - --log.level={{ .Values.traefik.args.log }}
+            - --api.dashboard={{ .Values.traefik.args.dashboard }}
+            - --global.checknewversion={{ .Values.traefik.args.newVersion }}
+            - --providers.kubernetescrd={{ .Values.traefik.args.kubeCrd }}          
+            - --ping={{ .Values.traefik.args.ping }}
+            # Permanent redirecting of all requests on http (80) to https (443)
+            - --entrypoints.web.address={{ .Values.traefik.args.entrypoints.webPort }}
+            - --entrypoints.websecure.address={{ .Values.traefik.args.entrypoints.websecurePort }}
+            - --entrypoints.traefik.address={{ .Values.traefik.args.entrypoints.adminPort }}
+            - --entrypoints.web.http.redirections.entryPoint.to={{ .Values.traefik.args.entrypoints.redirectTo }}
+            - --entrypoints.websecure.http.middlewares={{ .Values.pages.namespace }}-{{ .Values.pages.name }},{{ .Values.oauth.namespace }}-{{ .Values.oauth.name }}
+            # Prometheus settings
+            - --metrics.prometheus={{ .Values.traefik.args.metrics.enabled }}
+            - --metrics.prometheus.buckets={{ .Values.traefik.args.metrics.buckets }}
+            - --metrics.prometheus.addEntryPointsLabels={{ .Values.traefik.args.metrics.entrypointLabels }}
+            - --metrics.prometheus.addServicesLabels={{ .Values.traefik.args.metrics.servicesLabels }}
+            # Allow Kubernetes Dashboard to be exposed via IngressRoute
+            - --serversTransport.insecureSkipVerify={{ .Values.traefik.args.insecureSkipVerify }}
+            # Let's Encrypt Configurtion:
+            - --certificatesresolvers.le.acme.tlschallenge
+            - --certificatesresolvers.le.acme.email={{ .Values.traefik.args.le.email }}
+            - --certificatesresolvers.le.acme.storage={{ .Values.traefik.certs.mountPath }}/{{ .Values.traefik.args.le.certFile }}
+            - --certificatesResolvers.le.acme.dnsChallenge.provider={{ .Values.traefik.args.le.dnsChallengeProvider }}
+            - --certificatesresolvers.le.acme.caserver={{ .Values.traefik.args.le.caServer }}
+            - --entrypoints.websecure.http.tls.certResolver={{ .Values.traefik.args.le.certResolver }}
+            - --entrypoints.websecure.http.tls.domains[0].main={{ .Values.traefik.args.le.mainDomain }}
+            - --entrypoints.websecure.http.tls.domains[0].sans={{ .Values.traefik.args.le.sanDomain }}
+          ports:
+            - name: "{{ .Values.traefik.service.ports.web.name }}"
+              containerPort: {{ .Values.traefik.service.ports.web.port }}
+            - name: "{{ .Values.traefik.service.ports.websecure.name }}"
+              containerPort: {{ .Values.traefik.service.ports.websecure.port }}
+            - name: "{{ .Values.traefik.service.ports.admin.name }}"
+              containerPort: {{ .Values.traefik.service.ports.admin.port }}
+          env:
+            - name: "{{ .Values.traefik.env.api.name }}"
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.traefik.env.api.secretName }}"
+                  key: "{{ .Values.traefik.env.api.name }}"
+            - name: "{{ .Values.traefik.env.propagation.name }}"
+              value: "{{ .Values.traefik.env.propagation.value }}"
+            - name: "{{ .Values.traefik.env.polling.name }}"
+              value: "{{ .Values.traefik.env.polling.value }}"
+            - name: "{{ .Values.traefik.env.ttl.name }}"
+              value: "{{ .Values.traefik.env.ttl.value }}"
+          livenessProbe:
+            failureThreshold: {{ .Values.traefik.probe.failure }}
+            httpGet:
+              path: "{{ .Values.traefik.probe.path }}"
+              port: {{ .Values.traefik.service.ports.admin.port }}
+              scheme: "{{ .Values.traefik.probe.scheme }}"
+            initialDelaySeconds: {{ .Values.traefik.probe.initialDelay }}
+            periodSeconds: {{ .Values.traefik.probe.period }}
+            successThreshold: {{ .Values.traefik.probe.success }}
+            timeoutSeconds: {{ .Values.traefik.probe.timeout }}
+          readinessProbe:
+            failureThreshold: {{ .Values.traefik.probe.failure }}
+            httpGet:
+              path: "{{ .Values.traefik.probe.path }}"
+              port: {{ .Values.traefik.service.ports.admin.port }}
+              scheme: "{{ .Values.traefik.probe.scheme }}"
+            initialDelaySeconds: {{ .Values.traefik.probe.initialDelay }}
+            periodSeconds: {{ .Values.traefik.probe.period }}
+            successThreshold: {{ .Values.traefik.probe.success }}
+            timeoutSeconds: {{ .Values.traefik.probe.timeout }}
+          volumeMounts:
+            - name: "{{ .Values.traefik.certs.name }}"
+              mountPath: "{{ .Values.traefik.certs.mountPath }}"
+          resources: {}
+      volumes:
+        - name: "{{ .Values.traefik.certs.name }}"
+          persistentVolumeClaim:
+            claimName: "{{ .Values.traefik.certs.claimName }}"

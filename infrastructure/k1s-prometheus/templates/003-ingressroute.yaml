@@ -1,0 +1,16 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: "{{ .Values.prometheus.name }}"
+  namespace: "{{ .Values.prometheus.namespace }}"
+  labels:
+    app: "{{ .Values.prometheus.name }}"
+spec:
+  entryPoints:
+    - "{{ .Values.prometheus.ingress.entrypoint }}"
+  routes:
+  - match: "{{ .Values.prometheus.ingress.rule }}"
+    kind: Rule
+    services:
+    - name: "{{ .Values.prometheus.name }}"
+      port: {{ .Values.prometheus.service.ports.port }}

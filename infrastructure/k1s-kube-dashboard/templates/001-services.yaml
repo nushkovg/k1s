@@ -1,0 +1,28 @@
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: "{{ .Values.dashboard.name }}"
+  name: "{{ .Values.dashboard.name }}"
+  namespace: "{{ .Values.dashboard.namespace }}"
+spec:
+  ports:
+    - port: {{ .Values.dashboard.ports.port }}
+      targetPort: {{ .Values.dashboard.ports.targetPort }}
+  selector:
+    k8s-app: "{{ .Values.dashboard.name }}"
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: "{{ .Values.dashboardMetrics.name }}"
+  name: "{{ .Values.dashboardMetrics.name }}"
+  namespace: "{{ .Values.dashboard.namespace }}"
+spec:
+  ports:
+    - port: {{ .Values.dashboardMetrics.ports.port }}
+      targetPort: {{ .Values.dashboardMetrics.ports.port }}
+  selector:
+    k8s-app: "{{ .Values.dashboardMetrics.name }}"

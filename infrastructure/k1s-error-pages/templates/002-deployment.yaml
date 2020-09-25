@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Values.pages.name }}"
+  namespace: "{{ .Values.pages.namespace }}"
+spec:
+  replicas: {{ .Values.pages.replicas }}
+  selector:
+    matchLabels:
+      app: "{{ .Values.pages.name }}"
+  template:
+    metadata:
+      labels:
+        app: "{{ .Values.pages.name }}"
+    spec:
+      serviceAccountName: "{{ .Values.traefik.name }}"
+      containers:
+      - name: "{{ .Values.pages.name }}"
+        image: "{{ .Values.pages.image }}"
+        imagePullPolicy: "{{ .Values.pages.pullPolicy }}"
+        ports:
+        - containerPort: {{ .Values.pages.service.ports.port }}

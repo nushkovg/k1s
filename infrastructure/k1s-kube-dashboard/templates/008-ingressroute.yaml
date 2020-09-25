@@ -1,0 +1,16 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: "{{ .Values.dashboard.name }}"
+  namespace: "{{ .Values.dashboard.namespace }}"
+  labels:
+    app: "{{ .Values.dashboard.name }}"
+spec:
+  entryPoints:
+    - "{{ .Values.dashboard.ingress.entrypoint }}"
+  routes:
+  - match: "{{ .Values.dashboard.ingress.rule }}"
+    kind: Rule
+    services:
+    - name: "{{ .Values.dashboard.name }}"
+      port: {{ .Values.dashboard.ports.port }}

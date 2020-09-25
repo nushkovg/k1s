@@ -1,0 +1,16 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: "{{ .Values.grafana.name }}"
+  namespace: "{{ .Values.grafana.namespace }}"
+  labels:
+    app: "{{ .Values.grafana.name }}"
+spec:
+  entryPoints:
+    - "{{ .Values.grafana.ingress.entrypoint }}"
+  routes:
+  - match: "{{ .Values.grafana.ingress.rule }}"
+    kind: Rule
+    services:
+    - name: "{{ .Values.grafana.name }}"
+      port: {{ .Values.grafana.service.ports.port }}

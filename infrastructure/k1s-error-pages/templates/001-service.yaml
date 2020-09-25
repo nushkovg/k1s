@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ .Values.pages.name }}"
+  namespace: "{{ .Values.pages.namespace }}"
+  
+spec:
+  type: "{{ .Values.pages.service.type }}"
+  ports:
+  - name: "{{ .Values.pages.service.ports.name }}"
+    targetPort: {{ .Values.pages.service.ports.port }}
+    port: {{ .Values.pages.service.ports.port }}
+  selector:
+    app: "{{ .Values.pages.name }}"

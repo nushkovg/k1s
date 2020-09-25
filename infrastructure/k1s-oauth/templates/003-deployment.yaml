@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Values.oauth.name }}"
+  namespace: "{{ .Values.oauth.namespace }}"
+  labels:
+    app: "{{ .Values.oauth.name }}"
+spec:
+  replicas: {{ .Values.oauth.replicas }}
+  selector:
+    matchLabels:
+      app: "{{ .Values.oauth.name }}"
+  strategy:
+    type: "{{ .Values.oauth.strategy }}"
+  template:
+    metadata:
+      labels:
+        app: "{{ .Values.oauth.name }}"
+    spec:
+      serviceAccountName: "{{ .Values.traefik.name }}"
+      containers:
+      - image: "{{ .Values.oauth.image.repository }}:{{ .Values.oauth.image.tag }}"
+        name: "{{ .Values.oauth.name }}"
+        ports:
+        - containerPort: {{ .Values.oauth.service.ports.port }}
+        env:
+        - name: "{{ .Values.oauth.env.insecureCookie.name }}"
+          value: "{{ .Values.oauth.env.insecureCookie.value }}"
+        - name: "{{ .Values.oauth.env.log.name }}"
+          value: "{{ .Values.oauth.env.log.value }}"
+        - name: "{{ .Values.oauth.env.provider.name }}"
+          value: "{{ .Values.oauth.env.provider.value }}"
+        - name: "{{ .Values.oauth.env.whitelist.name }}"
+          value: "{{ .Values.oauth.env.whitelist.value }}"
+        - name: "{{ .Values.oauth.env.logoutRedirect.name }}"
+          value: "{{ .Values.oauth.env.logoutRedirect.value }}"
+        - name: "{{ .Values.oauth.env.cookieDomain.name }}"
+          value: "{{ .Values.oauth.env.cookieDomain.value }}"
+        - name: "{{ .Values.oauth.env.authHost.name }}"
+          value: "{{ .Values.oauth.env.authHost.value }}"
+        - name: "{{ .Values.oauth.env.authURL.name }}"
+          value: "{{ .Values.oauth.env.authURL.value }}"
+        - name: "{{ .Values.oauth.env.tokenURL.name }}"
+          value: "{{ .Values.oauth.env.tokenURL.value }}"
+        - name: "{{ .Values.oauth.env.userURL.name }}"
+          value: "{{ .Values.oauth.env.userURL.value }}"
+        - name: "{{ .Values.oauth.env.clientID.name }}"
+          valueFrom:
+            secretKeyRef:
+              key: "{{ .Values.oauth.env.clientID.name }}"
+              name: "{{ .Values.oauth.name }}"
+        - name: "{{ .Values.oauth.env.clientSecret.name }}"
+          valueFrom:
+            secretKeyRef:
+              key: "{{ .Values.oauth.env.clientSecret.name }}"
+              name: "{{ .Values.oauth.name }}"
+        - name: "{{ .Values.oauth.env.secret.name }}"
+          valueFrom:
+            secretKeyRef:
+              key: "{{ .Values.oauth.env.secret.name }}"
+              name: "{{ .Values.oauth.name }}"
+        resources: {}

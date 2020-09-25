@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Values.prometheus.name }}"
+  namespace: "{{ .Values.prometheus.namespace }}"
+spec:
+  replicas: {{ .Values.prometheus.replicas }}
+  selector:
+    matchLabels:
+      app: "{{ .Values.prometheus.name }}"
+  template:
+    metadata:
+      labels:
+        app: "{{ .Values.prometheus.name }}"
+    spec:
+      containers:
+        - name: "{{ .Values.prometheus.name }}"
+          image: "{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.image.tag }}"
+          imagePullPolicy: {{ .Values.prometheus.image.pullPolicy }}
+          args:
+            - --config.file={{ .Values.prometheus.args.config }}
+            - --storage.tsdb.path={{ .Values.prometheus.args.storagePath }}
+            - --storage.tsdb.retention.time={{ .Values.prometheus.args.retentionTime }}
+            - --web.external-url={{ .Values.prometheus.args.externalURL.protocol }}://{{ .Values.prometheus.name }}.{{ .Values.traefik.args.le.sanDomain }}
+          ports:
+            - containerPort: {{ .Values.prometheus.service.ports.port }}
+          volumeMounts:
+            - name: "{{ .Values.prometheus.volume.config.name }}"
+              mountPath: "{{ .Values.prometheus.volume.config.mountPath }}"
+            - name: "{{ .Values.prometheus.volume.storage.name }}"
+              mountPath: "{{ .Values.prometheus.volume.storage.mountPath }}"
+      volumes:
+        - name: "{{ .Values.prometheus.volume.config.name }}"
+          configMap:
+            defaultMode: {{ .Values.prometheus.volume.config.mode }}
+            name: "{{ .Values.prometheus.volume.config.name }}"
+        - name: "{{ .Values.prometheus.volume.storage.name }}"
+          persistentVolumeClaim:
+            claimName: "{{ .Values.prometheus.volume.storage.name }}"

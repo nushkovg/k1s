@@ -1,0 +1,13 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: "{{ .Values.pages.name }}"
+  namespace: "{{ .Values.pages.namespace }}"
+spec:
+  errors:
+    status:
+      - "{{ .Values.pages.middleware.status }}"
+    query: "{{ .Values.pages.middleware.query }}"
+    service:
+      name: "{{ .Values.pages.name }}"
+      port: {{ .Values.pages.service.ports.port }}

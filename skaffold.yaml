@@ -1,0 +1,82 @@
+apiVersion: skaffold/v2beta7
+kind: Config
+build:
+  local:
+    push: false
+    useBuildkit: true
+  artifacts:
+  - context: platform/k1s-dnsutils
+    image: k1s-dnsutils
+  - context: platform/k1s-error-pages
+    image: k1s-error-pages
+  - context: platform/k1s-ui
+    image: k1s-ui
+
+profiles:
+  - name: dev
+    activation:
+      - command: dev
+    
+    build:
+      artifacts:
+      - context: platform/k1s-dnsutils
+        image: k1s-dnsutils
+        custom:
+          buildCommand: ./scripts/build.sh
+        sync: {}
+      - context: platform/k1s-error-pages
+        image: k1s-error-pages
+        custom:
+          buildCommand: ./scripts/build.sh
+        sync: {}
+      - context: platform/k1s-ui
+        image: k1s-ui
+        custom:
+          buildCommand: ./scripts/build.sh
+        sync: {}
+
+    deploy:
+      statusCheckDeadlineSeconds: 1300
+      helm:
+        releases:
+        - name: k1s-traefik
+          namespace: k1s
+          chartPath: infrastructure/k1s-traefik
+          valuesFiles:
+          - infrastructure/helm-values.yaml
+          artifactOverrides:
+            traefik.cron.image: k1s-dnsutils
+        - name: k1s-error-pages
+          namespace: k1s
+          chartPath: infrastructure/k1s-error-pages
+          valuesFiles:
+          - infrastructure/helm-values.yaml
+          artifactOverrides:
+            pages.image: k1s-error-pages
+        - name: k1s-oauth
+          namespace: k1s
+          chartPath: infrastructure/k1s-oauth
+          valuesFiles:
+          - infrastructure/helm-values.yaml
+        - name: k1s-prometheus
+          namespace: k1s
+          chartPath: infrastructure/k1s-prometheus
+          valuesFiles:
+          - infrastructure/helm-values.yaml
+        - name: k1s-grafana
+          namespace: k1s
+          chartPath: infrastructure/k1s-grafana
+          valuesFiles:
+          - infrastructure/helm-values.yaml
+        - name: k1s-kube-dashboard
+          namespace: k1s
+          chartPath: infrastructure/k1s-kube-dashboard
+          valuesFiles:
+          - infrastructure/helm-values.yaml
+        - name: k1s-ui
+          namespace: k1s
+          chartPath: infrastructure/k1s-ui
+          valuesFiles:
+          - infrastructure/helm-values.yaml
+          artifactOverrides:
+            ui.image: k1s-ui

@@ -1,0 +1,14 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: "{{ .Values.traefik.ingress.name }}"
+  namespace: "{{ .Values.traefik.namespace }}"
+spec:
+  entryPoints:
+    - "{{ .Values.traefik.ingress.entryPoint }}"
+  routes:
+  - match: "{{ .Values.traefik.ingress.rule }}"
+    kind: Rule
+    services:
+    - name: "{{ .Values.traefik.ingress.service }}"
+      kind: TraefikService

@@ -1,0 +1,10 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: "{{ .Values.oauth.name }}"
+  namespace: "{{ .Values.oauth.namespace }}"
+spec:
+  forwardAuth:
+    address: "{{ .Values.oauth.middleware.protocol }}://{{ .Values.oauth.name }}:{{ .Values.oauth.service.ports.port }}"
+    authResponseHeaders:
+      - "{{ .Values.oauth.middleware.responseHeader }}"

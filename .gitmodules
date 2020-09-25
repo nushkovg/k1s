@@ -1,0 +1,9 @@
+[submodule "platform/k1s-error-pages"]
+	path = platform/k1s-error-pages
+	url = git@github.com:nushkovg/k1s-error-pages.git
+[submodule "platform/k1s-dnsutils"]
+	path = platform/k1s-dnsutils
+	url = git@github.com:nushkovg/k1s-dnsutils.git
+[submodule "platform/k1s-ui"]
+	path = platform/k1s-ui
+	url = git@github.com:nushkovg/k1s-ui.git

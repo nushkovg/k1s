@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Values.grafana.name }}"
+  namespace: "{{ .Values.grafana.namespace }}"
+spec:
+  replicas: {{ .Values.grafana.replicas }}
+  selector:
+    matchLabels:
+      app: "{{ .Values.grafana.name }}"
+  template:
+    metadata:
+      labels:
+        app: "{{ .Values.grafana.name }}"
+    spec:
+      containers:
+        - name: "{{ .Values.grafana.name }}"
+          image: "{{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}"
+          imagePullPolicy: {{ .Values.grafana.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.grafana.service.ports.port }}
+          env:
+            - name: "{{ .Values.grafana.env.admin.name }}"
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.grafana.name }}"
+                  key: "{{ .Values.grafana.env.admin.name }}"
+            - name: "{{ .Values.grafana.env.user.name }}"
+              value: "{{ .Values.grafana.env.user.value }}"
+            - name: "{{ .Values.grafana.env.signUp.name }}"
+              value: "{{ .Values.grafana.env.signUp.value }}"
+            - name: "{{ .Values.grafana.env.plugins.name }}"
+              value: "{{ .Values.grafana.env.plugins.value }}"
+            - name: "{{ .Values.grafana.env.home.name }}"
+              value: "{{ .Values.grafana.env.home.value }}"
+          volumeMounts:
+            - name: "{{ .Values.grafana.volume.dashboards.name }}"
+              mountPath: "{{ .Values.grafana.volume.dashboards.mountPath }}"
+            - name: "{{ .Values.grafana.volume.datasources.name }}"
+              mountPath: "{{ .Values.grafana.volume.datasources.mountPath }}"
+            - name: "{{ .Values.grafana.volume.storage.name }}"
+              mountPath: "{{ .Values.grafana.volume.storage.mountPath }}"
+      volumes:
+        - name: "{{ .Values.grafana.volume.dashboards.name }}"
+          configMap:
+            name: "{{ .Values.grafana.volume.dashboards.name }}"
+        - name: "{{ .Values.grafana.volume.datasources.name }}"
+          configMap:
+            name: "{{ .Values.grafana.volume.datasources.name }}"
+        - name: "{{ .Values.grafana.volume.storage.name }}"
+          persistentVolumeClaim:
+            claimName: "{{ .Values.grafana.volume.storage.name }}"

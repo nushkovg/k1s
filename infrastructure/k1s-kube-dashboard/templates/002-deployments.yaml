@@ -1,0 +1,110 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  labels:
+    k8s-app: "{{ .Values.dashboard.name }}"
+  name: "{{ .Values.dashboard.name }}"
+  namespace: "{{ .Values.dashboard.namespace }}"
+spec:
+  replicas: {{ .Values.dashboard.replicas }}
+  revisionHistoryLimit: {{ .Values.dashboard.historyLimit }}
+  selector:
+    matchLabels:
+      k8s-app: "{{ .Values.dashboard.name }}"
+  template:
+    metadata:
+      labels:
+        k8s-app: "{{ .Values.dashboard.name }}"
+    spec:
+      containers:
+        - name: "{{ .Values.dashboard.name }}"
+          image: "{{ .Values.dashboard.image.repository }}:{{ .Values.dashboard.image.tag }}"
+          imagePullPolicy: "{{ .Values.dashboard.image.pullPolicy }}"
+          ports:
+            - containerPort: {{ .Values.dashboard.ports.targetPort }}
+              protocol: "{{ .Values.dashboard.ports.protocol }}"
+          args:
+            - --auto-generate-certificates
+            - --namespace={{ .Values.dashboard.namespace }}
+          volumeMounts:
+            - name: "{{ .Values.dashboard.volume.certs.name }}"
+              mountPath: "{{ .Values.dashboard.volume.certs.mountPath }}"
+            - name: "{{ .Values.dashboard.volume.tmp.name }}"
+              mountPath: "{{ .Values.dashboard.volume.tmp.mountPath }}"
+          livenessProbe:
+            httpGet:
+              scheme: "{{ .Values.dashboard.probe.scheme }}"
+              path: "{{ .Values.dashboard.probe.path }}"
+              port: {{ .Values.dashboard.ports.targetPort }}
+            initialDelaySeconds: {{ .Values.dashboard.probe.initialDelay }}
+            timeoutSeconds: {{ .Values.dashboard.probe.timeout }}
+          securityContext:
+            allowPrivilegeEscalation: {{ .Values.dashboard.securityContext.escalation }}
+            readOnlyRootFilesystem: {{ .Values.dashboard.securityContext.rootReadOnly }}
+            runAsUser: {{ .Values.dashboard.securityContext.user }}
+            runAsGroup: {{ .Values.dashboard.securityContext.group }}
+      volumes:
+        - name: "{{ .Values.dashboard.volume.certs.name }}"
+          secret:
+            secretName: "{{ .Values.dashboard.volume.certs.name }}"
+        - name: "{{ .Values.dashboard.volume.tmp.name }}"
+          emptyDir: {}
+      serviceAccountName: "{{ .Values.dashboard.name }}"
+      nodeSelector:
+        "kubernetes.io/os": linux
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  labels:
+    k8s-app: "{{ .Values.dashboardMetrics.name }}"
+  name: "{{ .Values.dashboardMetrics.name }}"
+  namespace: "{{ .Values.dashboard.namespace }}"
+spec:
+  replicas: {{ .Values.dashboardMetrics.replicas }}
+  revisionHistoryLimit: {{ .Values.dashboardMetrics.historyLimit }}
+  selector:
+    matchLabels:
+      k8s-app: "{{ .Values.dashboardMetrics.name }}"
+  template:
+    metadata:
+      labels:
+        k8s-app: "{{ .Values.dashboardMetrics.name }}"
+      annotations:
+        seccomp.security.alpha.kubernetes.io/pod: 'runtime/default'
+    spec:
+      containers:
+        - name: "{{ .Values.dashboardMetrics.name }}"
+          image: "{{ .Values.dashboardMetrics.image.repository }}:{{ .Values.dashboardMetrics.image.tag }}"
+          imagePullPolicy: "{{ .Values.dashboardMetrics.image.pullPolicy }}"
+          ports:
+            - containerPort: {{ .Values.dashboardMetrics.ports.port }}
+              protocol: {{ .Values.dashboardMetrics.ports.protocol }}
+          livenessProbe:
+            httpGet:
+              scheme: "{{ .Values.dashboardMetrics.probe.scheme }}"
+              path: "{{ .Values.dashboardMetrics.probe.path }}"
+              port: {{ .Values.dashboardMetrics.ports.port }}
+            initialDelaySeconds: {{ .Values.dashboardMetrics.probe.initialDelay }}
+            timeoutSeconds: {{ .Values.dashboardMetrics.probe.timeout }}
+          volumeMounts:
+          - mountPath: "{{ .Values.dashboard.volume.tmp.mountPath }}"
+            name: "{{ .Values.dashboard.volume.tmp.name }}"
+          securityContext:
+            allowPrivilegeEscalation: {{ .Values.dashboardMetrics.securityContext.escalation }}
+            readOnlyRootFilesystem: {{ .Values.dashboardMetrics.securityContext.rootReadOnly }}
+            runAsUser: {{ .Values.dashboardMetrics.securityContext.user }}
+            runAsGroup: {{ .Values.dashboardMetrics.securityContext.group }}
+      volumes:
+        - name: "{{ .Values.dashboard.volume.tmp.name }}"
+          emptyDir: {}
+      serviceAccountName: "{{ .Values.dashboard.name }}"
+      nodeSelector:
+        "kubernetes.io/os": linux
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule

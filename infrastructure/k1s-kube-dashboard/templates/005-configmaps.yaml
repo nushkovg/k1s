@@ -1,0 +1,7 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: "{{ .Values.dashboard.name }}"
+  name: "{{ .Values.dashboard.configmap.name }}"
+  namespace: "{{ .Values.dashboard.namespace }}"

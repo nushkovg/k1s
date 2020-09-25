@@ -1,0 +1,4 @@
+name: k1s-oauth
+version: 0.0.1
+platform: k1s
+description: K1S OAuth Helm Chart

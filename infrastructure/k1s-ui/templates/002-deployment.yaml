@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ .Values.ui.name }}"
+  namespace: "{{ .Values.ui.namespace }}"
+spec:
+  replicas: {{ .Values.ui.replicas }}
+  selector:
+    matchLabels:
+      app: "{{ .Values.ui.name }}"
+  template:
+    metadata:
+      labels:
+        app: "{{ .Values.ui.name }}"
+    spec:
+      containers:
+      - name: "{{ .Values.ui.name }}"
+        image: "{{ .Values.ui.image }}"
+        imagePullPolicy: "{{ .Values.ui.pullPolicy }}"
+        ports:
+        - containerPort: {{ .Values.ui.service.ports.port }}
