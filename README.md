@@ -138,7 +138,7 @@ python --version
 
 If you are not running Python 3.7 or later, please upgrade your Python version.
 
-Follow these steps to install `kubepi` by using `pip`:
+[KubePI](https://github.com/nushkovg/kubepi) is available as an official [PyPI package](https://pypi.org/project/kubepi/). Follow these steps to install `kubepi` by using `pip`:
 
 ```bash
 # Raspberry Pi OS (Raspbian) still shipping python2 by default
