@@ -19,7 +19,7 @@ k1s comes preloaded with the following:
 - Wildcard LetsEncrypt SSL Certificate
 - DDNS Update CronJob for Namesilo A Records
 
-It also has a CLI interface named `kubepi`. It is a custom tool for making the k1s management easier for the K3D setup, dependencies, submodules, and more. The usage of `kubepi` will be explained in more detail in the following sections.
+The most of the setup is done via a CLI interface named [KubePI](https://github.com/nushkovg/kubepi). It is a custom tool for making the k1s management easier for the K3D setup, dependencies, submodules, and more. The usage of `kubepi` will be explained in more detail in the following sections.
 
 ## Getting Ready
 
@@ -127,7 +127,7 @@ cd k1s
 
 ## KubePI
 
-For easier usage and setup there is a CLI called `kubepi`. It is a custom tool for making the k1s management easier for the K3D setup, dependencies, submodules, and more. It needs at least Python 3.7. Please check that you have Python 3.7 or later by running:
+For easier usage and setup there is a CLI called [KubePI](https://github.com/nushkovg/kubepi). It is a custom tool for making the k1s management easier for the K3D setup, dependencies, submodules, and more. It needs at least Python 3.7. Please check that you have Python 3.7 or later by running:
 
 ```bash
 # Raspberry Pi OS (Raspbian) users
@@ -138,13 +138,13 @@ python --version
 
 If you are not running Python 3.7 or later, please upgrade your Python version.
 
-Follow these steps to install `kubepi` by using `pip`:
+[KubePI](https://github.com/nushkovg/kubepi) is available as an official [PyPI package](https://pypi.org/project/kubepi/). Follow these steps to install `kubepi` by using `pip`:
 
 ```bash
 # Raspberry Pi OS (Raspbian) still shipping python2 by default
-python3 -m pip install --editable .
+pip3 install kubepi
 # Arch shipping python3 by default
-pip install --editable .
+pip install kubepi
 ```
 
 Now you should have the `kubepi` command in your path and you can run `kubepi` to display the help:
@@ -510,6 +510,22 @@ When pulling changes with `git pull` and you're using submodules, you must run t
 
 ```bash
 kubepi platform init
+```
+
+### Getting the Platform URL
+
+To get the main URL of the platform, which is the K1S Dashboard, you can run:
+
+```bash
+kubepi platform info
+```
+
+### Checking Submodule Versions
+
+To get the current submodule branches and commit hashes, run:
+
+```bash
+kubepi platform version
 ```
 
 ### Checking the Logs Manually
