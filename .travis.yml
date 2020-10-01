@@ -1,0 +1,38 @@
+os: linux
+dist: focal
+language: generic
+
+env:
+  global:
+  - PATH=$TRAVIS_BUILD_DIR/bin:$PATH 
+
+git:
+  submodules: false
+
+services:
+  - docker
+
+before_install:
+  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
+  - echo '{"experimental":"enabled"}' | sudo tee /etc/docker/daemon.json
+  - mkdir -p $HOME/.docker
+  - echo '{"experimental":"enabled"}' | sudo tee $HOME/.docker/config.json
+  - mkdir -vp ~/.docker/cli-plugins/
+  - curl --silent -L "https://github.com/docker/buildx/releases/download/v0.4.2/buildx-v0.4.2.linux-amd64" > ~/.docker/cli-plugins/docker-buildx
+  - chmod a+x ~/.docker/cli-plugins/docker-buildx
+  - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+  - docker buildx create --name travis --driver docker-container --use
+  - docker buildx inspect --bootstrap
+install:
+  - pip install kubepi
+  - kubepi setup init
+  - kubepi platform init
+  - kubepi k3d create
+before_script:
+  - kubectl -n traefik create secret generic namesilo --from-literal='NAMESILO_API_KEY=randomapikeyfortesting'
+  - kubectl -n monitoring create secret generic grafana --from-literal='GF_SECURITY_ADMIN_PASSWORD=randompassword'
+  - kubectl -n traefik create secret generic traefik-forward-auth --from-literal='PROVIDERS_GENERIC_OAUTH_CLIENT_ID=randomidfortesting' --from-literal='PROVIDERS_GENERIC_OAUTH_CLIENT_SECRET=randomclientsecretfortesting' --from-literal='SECRET=randomsecretfortesting'
+script:
+  - skaffold build --dry-run=true
+  # Skaffold image builds are failing in Travis when using the buildKit. See https://github.com/GoogleContainerTools/skaffold/issues/4840
+  # - skaffold dev --port-forward --force=false --cleanup=true
