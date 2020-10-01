@@ -2,6 +2,7 @@
 <p>
   <img src="https://raw.githubusercontent.com/nushkovg/k1s-website/master/_media/logo-large.svg" />
 </p>
+<h1>k1s</h1>
 <img alt="Travis (.org)" src="https://img.shields.io/travis/nushkovg/k1s">
 <img alt="GitHub tag (latest by date)" src="https://img.shields.io/github/v/tag/nushkovg/k1s?label=version">
 <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/nushkovg/k1s">
