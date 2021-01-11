@@ -356,7 +356,7 @@ dashboard:
   
   image:
     repository: kubernetesui/dashboard
-    tag: v2.0.4
+    tag: v2.1.0
     pullPolicy: IfNotPresent
   
   volume:
